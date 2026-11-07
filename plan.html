@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Vairagya Events interactive venue map">
+<link rel="icon" href="logo.png">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Vairagya Events Venue Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: illustrated venue plan (fixed map palette) in a zoomable frame; details + element list beside it; stacks on phones */
+:root{
+  --paper:#F4F6F2; --sheet:#FFFFFF; --ink:#16261D; --ink-2:#5A6B60; --rule:#D6DED6;
+  --accent:#D9261C; --hl:#FFD23F; --brand:#13704A;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0F1612;--sheet:#16201A;--ink:#E3ECE5;--ink-2:#98AA9E;--rule:#2B3A31;--accent:#F05A4F;--brand:#3DBA6E;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#0F1612;--sheet:#16201A;--ink:#E3ECE5;--ink-2:#98AA9E;--rule:#2B3A31;--accent:#F05A4F;--brand:#3DBA6E;color-scheme:dark}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{max-width:1400px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 28px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 24px;border-bottom:2px solid var(--brand);padding-bottom:10px}
+.brand{display:flex;align-items:center;gap:16px;min-width:0}
+.brand img{height:56px;width:auto;flex:none}
+.brand .vr{width:1px;align-self:stretch;background:var(--rule)}
+.tabs{display:flex;gap:4px;margin-top:6px}
+.tabs a{font:600 12px var(--body);text-decoration:none;color:var(--ink-2);padding:3px 9px;border-radius:99px;border:1px solid var(--rule)}
+.tabs a[aria-current]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (max-width:560px){.brand img{height:40px}.brand .vr{display:none}}
+h1{font-family:var(--display);font-weight:700;color:var(--brand);font-size:clamp(24px,3.6vw,34px);letter-spacing:.02em;text-transform:uppercase;margin:0;line-height:1;text-wrap:balance}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 0 6px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+.meta b{color:var(--ink);font-weight:500}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
+@media (max-width:980px){.main{grid-template-columns:minmax(0,1fr)}}
+.plan{position:relative;border-radius:6px;overflow:hidden;min-width:0;background:#8E6E57;border:1px solid var(--rule)}
+.plan svg{display:block;width:100%;height:auto;aspect-ratio:180/74;touch-action:none;cursor:grab;user-select:none}
+.plan svg.dragging{cursor:grabbing}
+.tools{position:absolute;bottom:10px;right:10px;display:flex;gap:6px}
+.tools button{width:34px;height:34px;border:0;background:rgba(255,255,255,.92);color:#1E2A22;font:600 17px/1 var(--body);border-radius:4px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+button:focus-visible,input:focus-visible,.legend li:focus-visible,.el:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+.tip{position:absolute;pointer-events:none;background:#1E2A22;color:#fff;font-family:var(--mono);font-size:11px;padding:4px 7px;border-radius:3px;white-space:nowrap;transform:translate(-50%,-140%)}
+aside{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding:14px 16px}
+.sel h2{font-family:var(--display);font-size:26px;font-weight:700;margin:0 0 4px;line-height:1.05;text-transform:uppercase;letter-spacing:.02em}
+.chip{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:2px 8px;border-radius:99px;color:#fff;margin-bottom:10px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:0 0 10px;font-size:13px}
+dt{color:var(--ink-2)} dd{margin:0;font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.note{margin:0;color:var(--ink-2);font-size:13px}
+.layers{display:flex;flex-wrap:wrap;gap:4px 16px}
+.layers label{display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer;font-size:13px}
+.legend{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto}
+.legend li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 4px;border-bottom:1px dashed var(--rule);cursor:pointer;font-size:13px}
+.legend li:hover,.legend li.on{background:var(--paper)}
+.legend li>span:last-child{font-family:var(--mono);font-size:11px;color:var(--ink-2);white-space:nowrap}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;vertical-align:-1px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding:10px 14px}
+.stat b{display:block;font-family:var(--display);font-size:26px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--ink-2)}
+.next{background:var(--sheet);border-left:4px solid var(--brand)}
+.next p{margin:0;font-size:13.5px}
+/* map (fixed illustration palette) */
+.lbl{font-family:var(--display);font-weight:700;fill:#fff;text-anchor:middle;dominant-baseline:middle;pointer-events:none;letter-spacing:.04em}
+.lbl.dk{fill:#3D3127}
+.el{cursor:pointer}
+.selbox{fill:none;stroke:#FFD23F;stroke-width:.7;stroke-dasharray:1.6 .8;pointer-events:none}
+.hidden-layer{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <img src="logo.png" alt="Vairagya Events">
+      <span class="vr"></span>
+      <div>
+        <p class="eyebrow">Kutch Heritage Lawns · venue layout</p>
+        <h1>Venue Site Plan</h1>
+        <nav class="tabs" aria-label="Map type"><a href="index.html">3D view</a><a href="#" aria-current="page">2D plan</a></nav>
+      </div>
+    </div>
+    <div class="meta">
+      <span>Ground <b>≈ 175 × 72 m</b></span>
+      <span>Event <b>Wedding (sample)</b></span>
+      <span>Guests <b>1,200</b></span>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="main">
+    <div class="plan">
+      <svg id="svg" viewBox="0 0 180 74" role="img" aria-label="Illustrated top-down layout of the wedding venue">
+        <defs>
+          <g id="palm">
+            <g fill="#2E7D32">
+              <ellipse cx="0" cy="-1.5" rx=".55" ry="1.6"/><ellipse cx="0" cy="-1.5" rx=".55" ry="1.6" transform="rotate(45)"/>
+              <ellipse cx="0" cy="-1.5" rx=".55" ry="1.6" transform="rotate(90)"/><ellipse cx="0" cy="-1.5" rx=".55" ry="1.6" transform="rotate(135)"/>
+              <ellipse cx="0" cy="-1.5" rx=".55" ry="1.6" transform="rotate(180)"/><ellipse cx="0" cy="-1.5" rx=".55" ry="1.6" transform="rotate(225)"/>
+              <ellipse cx="0" cy="-1.5" rx=".55" ry="1.6" transform="rotate(270)"/><ellipse cx="0" cy="-1.5" rx=".55" ry="1.6" transform="rotate(315)"/>
+            </g>
+            <g fill="#56A83C">
+              <ellipse cx="0" cy="-1.1" rx=".35" ry="1.1" transform="rotate(22)"/><ellipse cx="0" cy="-1.1" rx=".35" ry="1.1" transform="rotate(112)"/>
+              <ellipse cx="0" cy="-1.1" rx=".35" ry="1.1" transform="rotate(202)"/><ellipse cx="0" cy="-1.1" rx=".35" ry="1.1" transform="rotate(292)"/>
+            </g>
+            <circle r=".45" fill="#6B4A2E"/>
+          </g>
+          <g id="tree">
+            <circle r="2.6" fill="#2F7A2F"/>
+            <circle cx="-1.1" cy="-.7" r="1.5" fill="#3E9440"/><circle cx="1" cy="-.9" r="1.4" fill="#4DA24A"/>
+            <circle cx=".3" cy="1" r="1.4" fill="#3E9440"/><circle cx="-.4" cy="-.3" r=".8" fill="#6CC05E"/>
+          </g>
+          <g id="chair"><rect x="-.28" y="-.28" width=".56" height=".56" rx=".1" fill="#F5F3EC"/></g>
+          <g id="sofa"><rect x="-.8" y="-.4" width="1.6" height=".8" rx=".2" fill="#C9D0D8"/><rect x="-.8" y="-.4" width="1.6" height=".25" fill="#9AA6B3"/></g>
+          <g id="table">
+            <rect x="-.35" y="-1.75" width=".7" height=".6" rx=".1" fill="#F5F3EC"/><rect x="-.35" y="1.15" width=".7" height=".6" rx=".1" fill="#F5F3EC"/>
+            <rect x="-1.75" y="-.35" width=".6" height=".7" rx=".1" fill="#F5F3EC"/><rect x="1.15" y="-.35" width=".6" height=".7" rx=".1" fill="#F5F3EC"/>
+            <circle r=".95" fill="#FFFFFF" stroke="#C9B9A5" stroke-width=".12"/>
+          </g>
+          <g id="car"><rect x="-1" y="-2" width="2" height="4" rx=".6"/><rect x="-.75" y="-1.2" width="1.5" height="1" rx=".2" fill="#2B3440" opacity=".7"/></g>
+          <pattern id="grass" width="8" height="74" patternUnits="userSpaceOnUse">
+            <rect width="8" height="74" fill="#7CBF3B"/><rect width="4" height="74" fill="#84C543"/>
+          </pattern>
+        </defs>
+        <g id="world"></g>
+      </svg>
+      <div class="tools">
+        <button id="zin" aria-label="Zoom in">+</button>
+        <button id="zout" aria-label="Zoom out">−</button>
+        <button id="zfit" aria-label="Show whole venue" style="font-size:13px">⤢</button>
+      </div>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+
+    <aside>
+      <div class="card sel" id="sel"></div>
+      <div class="card">
+        <p class="eyebrow">Show on map</p>
+        <div class="layers" id="layers"></div>
+      </div>
+      <div class="card">
+        <p class="eyebrow">All areas · tap to locate</p>
+        <ul class="legend" id="legend"></ul>
+      </div>
+      <div class="card next">
+        <p class="eyebrow">See it in 3D</p>
+        <p>Walk around this same layout in 3D, with real heights, guest view and night lighting. <a href="index.html" style="color:var(--brand);font-weight:600">Open the 3D view →</a></p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const NS="http://www.w3.org/2000/svg";
+const $=s=>document.querySelector(s);
+const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e};
+const use=(id,x,y,p,extra={})=>mk("use",{href:"#"+id,transform:`translate(${x},${y})${extra.s?` scale(${extra.s})`:""}${extra.r?` rotate(${extra.r})`:""}`,...(extra.fill?{fill:extra.fill}:{})},p);
+const W=$("#world");
+const L={};["ground","areas","furniture","trees","labels","sel"].forEach(k=>L[k]=mk("g",{id:"L-"+k},W));
+
+const CAT={
+ stage:{n:"Stage & seating",c:"#1F4E9A"}, hall:{n:"Halls & rooms",c:"#7A8794"}, food:{n:"Food",c:"#D7252B"},
+ wash:{n:"Washrooms",c:"#1F8A86"}, decor:{n:"Decor & lounges",c:"#C2410C"}, service:{n:"Services",c:"#6D4C2F"}, park:{n:"Parking & entry",c:"#8A7B6D"}
+};
+// x,y,w,d in metres; h = height for 3D
+const EL=[
+ {id:"stage",n:"Stage",cat:"stage",x:15,y:22,w:9,d:18,h:1.2,cap:"Couple + 20 on stage",note:"Raised stage facing east with LED backdrop. Red carpet aisle runs from the stage to the back of the seating."},
+ {id:"aisle",n:"Red Carpet Aisle",cat:"stage",x:24,y:30.4,w:32,d:1.2,h:0.05,cap:null,note:"Bride entry walk, 32 m long, flanked by flower stands."},
+ {id:"sofa",n:"VIP Sofa Seating",cat:"stage",x:26,y:16,w:8,d:30,h:0.9,cap:"72 guests",note:"Two-seater sofas for family on both sides of the aisle."},
+ {id:"chairs",n:"Guest Chairs",cat:"stage",x:35,y:16,w:21,d:30,h:0.9,cap:"≈ 400 chairs",note:"Banquet chairs in two blocks. 1.2 m gap between blocks for the aisle."},
+ {id:"gazebo",n:"Gazebos",cat:"decor",x:21,y:9,w:20,d:6,h:3.2,cap:"3 gazebos",note:"Red gazebos for welcome drinks and the mehendi corner."},
+ {id:"food",n:"Food Area (Tables)",cat:"food",x:60,y:12,w:24,d:46,h:0.75,cap:"14 tables · 56 seats",note:"Round tables with 4 chairs each, spread around the lawn for relaxed dining."},
+ {id:"counter1",n:"Buffet Counters",cat:"food",x:86.5,y:12,w:3,d:52,h:1.2,cap:"2 counter lines",note:"Main course and dessert counters along the east edge of the lawn, lit with red lights."},
+ {id:"counter2",n:"Live Counters",cat:"food",x:52,y:9.4,w:26,d:1.4,h:1.2,cap:"6 live stations",note:"Chaat, pasta, dosa and tandoor live stations along the north edge."},
+ {id:"bride",n:"Bride Room",cat:"hall",x:100,y:9,w:12,d:11,h:3.5,cap:"10 people",note:"Getting-ready room with sofa set and mirror wall. AC, attached washroom."},
+ {id:"photo",n:"Photo & Selfie Zone",cat:"decor",x:100,y:23,w:12,d:16,h:3,cap:null,note:"Flower wall and props between the bride and groom rooms."},
+ {id:"groom",n:"Groom Room",cat:"hall",x:100,y:42,w:12,d:11,h:3.5,cap:"10 people",note:"Getting-ready room for the groom's side, near the baraat start point."},
+ {id:"kitchen",n:"Kitchen Area",cat:"service",x:100,y:56,w:15,d:11,h:4.5,cap:null,note:"Covered cooking area. Service path to the buffet counters runs along the lawn edge."},
+ {id:"hallA",n:"Hall A",cat:"hall",x:118,y:7,w:24,d:22,h:7,cap:"350 seated",note:"Air-conditioned German hangar for sangeet night. Doors face the walkway between halls."},
+ {id:"hallB",n:"Hall B",cat:"hall",x:118,y:35,w:24,d:22,h:7,cap:"350 seated",note:"Second hangar for dining backup in case of rain, or for the reception."},
+ {id:"wash",n:"Washroom Block",cat:"wash",x:40,y:60.5,w:10,d:5.5,h:3,cap:"10 seats (5 M · 5 F)",note:"Permanent washroom building at the south edge of the lawn."},
+ {id:"caps",n:"Capsule Toilets",cat:"wash",x:72,y:61,w:12,d:4,h:2.4,cap:"5 units",note:"Portable capsule toilets with a hand-wash station. Cleaning crew every 2 hours."},
+ {id:"dg",n:"Generator (DG Set)",cat:"service",x:120,y:61,w:8,d:6,h:2.5,cap:"2 × 250 kVA",note:"Fenced corner behind the kitchen, away from guests."},
+ {id:"entry",n:"Guest Entry",cat:"park",x:7,y:46,w:6,d:6,h:4,cap:null,note:"Main guest gate from the road with welcome arch and security check."},
+ {id:"parking",n:"Parking Area",cat:"park",x:146,y:5,w:31,d:63,h:0,cap:"≈ 150 cars",note:"Valet and self-parking. Reached by the 'Way for Parking' road along the north edge."},
+];
+const byId=Object.fromEntries(EL.map(e=>[e.id,e]));
+
+// ---------- ground ----------
+const G=L.ground;
+mk("rect",{x:0,y:0,width:180,height:74,fill:"#9C7B62"},G);                 // soil
+mk("rect",{x:0,y:0,width:7,height:74,fill:"#2F3236"},G);                    // road
+for(let y=1;y<74;y+=5)mk("rect",{x:3.2,y,width:.6,height:2.6,fill:"#F2F2F2"},G);
+mk("rect",{x:9,y:3.5,width:169,height:67,rx:1,fill:"#C9B3A0"},G);           // inner paving
+mk("rect",{x:12,y:8.5,width:85,height:58,rx:.6,fill:"url(#grass)"},G);      // lawn
+mk("rect",{x:7,y:46,width:6,height:6,fill:"#C9B3A0"},G);                    // entry path
+mk("path",{d:"M12,8.5 V46 M12,52 V66.5",stroke:"#6E7377","stroke-width":.35,fill:"none"},G); // boundary wall
+mk("rect",{x:146,y:5,width:31,height:63,rx:.6,fill:"#D6C4B4"},G);           // parking pad
+for(let y=8;y<66;y+=4.2){mk("line",{x1:150,y1:y,x2:157,y2:y,stroke:"#F4EEE8","stroke-width":.25},G);mk("line",{x1:166,y1:y,x2:173,y2:y,stroke:"#F4EEE8","stroke-width":.25},G)}
+mk("rect",{x:115.5,y:29.5,width:29,height:5,fill:"#BFA691"},G);            // walkway between halls
+
+// ---------- areas ----------
+const A=L.areas,nodes={};
+function group(e){const g=mk("g",{class:"el","data-id":e.id,tabindex:0,role:"button","aria-label":e.n},A);nodes[e.id]=g;return g}
+function hipRoof(g,x,y,w,d,base,ridge,line){
+  mk("rect",{x,y,width:w,height:d,fill:base},g);
+  const inset=Math.min(w,d)/2,horiz=w>=d;
+  const r1=horiz?[x+inset,y+d/2]:[x+w/2,y+inset], r2=horiz?[x+w-inset,y+d/2]:[x+w/2,y+d-inset];
+  [[x,y,...r1],[x+w,y,...(horiz?r2:r1)],[x,y+d,...(horiz?r1:r2)],[x+w,y+d,...r2]].forEach(([a,b,c,d2])=>mk("line",{x1:a,y1:b,x2:c,y2:d2,stroke:line,"stroke-width":.25},g));
+  mk("line",{x1:r1[0],y1:r1[1],x2:r2[0],y2:r2[1],stroke:line,"stroke-width":.35},g);
+  // shade two faces
+  mk("polygon",{points:horiz?`${x},${y+d} ${x+w},${y+d} ${r2.join(",")} ${r1.join(",")}`:`${x+w},${y} ${x+w},${y+d} ${r2.join(",")} ${r1.join(",")}`,fill:"#000",opacity:.08,"pointer-events":"none"},g);
+  mk("rect",{x,y,width:w,height:d,fill:"none",stroke:line,"stroke-width":.3},g);
+}
+function room(g,e,sofaRot){
+  mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#7C8C99",rx:.3},g);
+  mk("rect",{x:e.x+.7,y:e.y+.7,width:e.w-1.4,height:e.d-1.4,fill:"#DDE4EA"},g);
+  const cx=e.x+e.w/2,cy=e.y+e.d/2;
+  mk("rect",{x:cx-2.6,y:cy-1.6,width:5.2,height:1.3,rx:.3,fill:"#8F9BA8"},g);
+  mk("rect",{x:cx-2.6,y:cy-.3,width:1.3,height:2.4,rx:.3,fill:"#8F9BA8"},g);
+  mk("rect",{x:cx-.6,y:cy+.4,width:2.6,height:1.4,rx:.2,fill:"#FFFFFF",stroke:"#B9C3CC","stroke-width":.12},g);
+}
+EL.forEach(e=>{
+  const g=group(e);
+  switch(e.id){
+  case "stage":
+    mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#1F4E9A",stroke:"#FFFFFF","stroke-width":.6},g);
+    mk("rect",{x:e.x+.6,y:e.y+.6,width:1,height:e.d-1.2,fill:"#163A75"},g); break;
+  case "aisle": mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#E3262B"},g); break;
+  case "sofa": case "chairs": mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#000",opacity:0},g); break;
+  case "gazebo":
+    [24,31,38].forEach(x=>{const h=mk("polygon",{points:[0,60,120,180,240,300].map(a=>{const r=2.5,t=a*Math.PI/180;return(x+r*Math.cos(t)).toFixed(2)+","+(12+r*Math.sin(t)).toFixed(2)}).join(" "),fill:"#D7252B",stroke:"#A8171C","stroke-width":.2},g);
+      [0,60,120].forEach(a=>{const t=a*Math.PI/180;mk("line",{x1:x+2.5*Math.cos(t),y1:12+2.5*Math.sin(t),x2:x-2.5*Math.cos(t),y2:12-2.5*Math.sin(t),stroke:"#A8171C","stroke-width":.15},g)})}); break;
+  case "food": mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#000",opacity:0},g); break;
+  case "counter1": case "counter2": {
+    const vert=e.id==="counter1";
+    const segs=vert?[[12,38],[41,64]]:[[52,78]];
+    segs.forEach(([a,b])=>{
+      mk(vert?"rect":"rect",vert?{x:e.x+1,y:a,width:1,height:b-a,fill:"#B71C1C"}:{x:a,y:e.y+.2,width:b-a,height:1,fill:"#B71C1C"},g);
+      for(let t=a+.6;t<b;t+=1.2)mk("circle",vert?{cx:e.x+1.5,cy:t,r:.28,fill:"#FFE082"}:{cx:t,cy:e.y+.7,r:.28,fill:"#FFE082"},g)});
+    mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#000",opacity:0},g); break;}
+  case "bride": case "groom": room(g,e); break;
+  case "photo":
+    mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#A88E78",rx:.3},g);
+    mk("rect",{x:e.x+1,y:e.y+1,width:e.w-2,height:e.d-2,fill:"#B89C84"},g);
+    for(let i=0;i<5;i++)mk("circle",{cx:e.x+2+i*2,cy:e.y+2,r:.7,fill:["#E91E63","#FFB300","#F06292","#FFFFFF","#E91E63"][i]},g); break;
+  case "kitchen": hipRoof(g,e.x,e.y,e.w,e.d,"#4A4F55","#3A3E43","#2A2D31"); break;
+  case "hallA": case "hallB": hipRoof(g,e.x,e.y,e.w,e.d,"#F4F6F8","#E1E6EB","#B8C2CC"); break;
+  case "wash":
+    mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#7C8C99",rx:.3},g);
+    mk("rect",{x:e.x+.5,y:e.y+.5,width:e.w-1,height:e.d-1,fill:"#CFE7E5"},g);
+    for(let i=0;i<5;i++)mk("rect",{x:e.x+.9+i*1.7,y:e.y+.9,width:1.3,height:1.6,fill:"#FFFFFF",stroke:"#1F8A86","stroke-width":.12},g); break;
+  case "caps":
+    for(let i=0;i<5;i++){const x=e.x+i*2.2;mk("rect",{x,y:e.y,width:1.9,height:3,rx:.8,fill:"#1E88E5",stroke:"#0D47A1","stroke-width":.15},g);mk("rect",{x:x+.4,y:e.y+.4,width:1.1,height:.5,rx:.2,fill:"#BBDEFB"},g)}
+    mk("rect",{x:e.x+11,y:e.y+.6,width:1,height:1.8,fill:"#FFFFFF",stroke:"#0D47A1","stroke-width":.12},g); break;
+  case "dg":
+    mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#6D4C2F"},g);
+    mk("rect",{x:e.x+.8,y:e.y+.8,width:3,height:4.4,fill:"#F9A825"},g);mk("rect",{x:e.x+4.2,y:e.y+.8,width:3,height:4.4,fill:"#F9A825"},g); break;
+  case "entry":
+    mk("rect",{x:e.x+.8,y:e.y-.3,width:1.2,height:6.6,fill:"#D7252B"},g);mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#000",opacity:0},g);
+    [[-1],[7]].forEach(([dy])=>use("tree",e.x+3.5,e.y+dy,g,{s:.45})); break;
+  case "parking":
+    mk("rect",{x:e.x,y:e.y,width:e.w,height:e.d,fill:"#000",opacity:0},g);
+    [[153.5,10,"#E53935"],[153.5,22.6,"#FAFAFA"],[153.5,31,"#1E88E5"],[169.5,14.2,"#424242"],[169.5,26,"#FDD835"],[169.5,47.8,"#FAFAFA"],[153.5,56.2,"#8E24AA"]].forEach(([x,y,c])=>use("car",x,y+2.1,g,{r:90,fill:c})); break;
+  }
+});
+
+// ---------- furniture ----------
+const F=L.furniture;
+for(let x=27;x<34;x+=2)for(let y=17;y<30;y+=1.5)use("sofa",x,y,F);
+for(let x=27;x<34;x+=2)for(let y=33;y<46;y+=1.5)use("sofa",x,y,F);
+for(let x=35.5;x<56;x+=.95)for(let y=16.5;y<29.8;y+=.95)use("chair",x,y,F);
+for(let x=35.5;x<56;x+=.95)for(let y=32.4;y<45.6;y+=.95)use("chair",x,y,F);
+[[63,15],[70,13],[78,17],[65,23],[74,25],[81,28],[63,32],[70,35],[79,38],[65,42],[74,46],[81,50],[64,53],[72,56]].forEach(([x,y])=>use("table",x,y,F));
+// flower bed near entry + stands along aisle
+mk("ellipse",{cx:18,cy:56,rx:3,ry:1.6,fill:"#3E9440"},F);[[16.5,55.6,"#E91E63"],[18.4,56.4,"#FFB300"],[19.6,55.5,"#F06292"]].forEach(([x,y,c])=>mk("circle",{cx:x,cy:y,r:.5,fill:c},F));
+for(let x=36;x<56;x+=4){mk("circle",{cx:x,cy:30,r:.32,fill:"#FFEB3B"},F);mk("circle",{cx:x,cy:32,r:.32,fill:"#FFEB3B"},F)}
+
+// ---------- trees ----------
+const T=L.trees;
+for(let x=14;x<=96;x+=3.8)use("palm",x,4.6,T,{s:.95});
+for(let y=10;y<=66;y+=3.6){if(y>44&&y<54)continue;use("palm",9.6,y,T,{s:.9})}
+for(let x=101;x<=176;x+=5.6)use("tree",x,2.6,T,{s:.85});
+for(let y=8;y<=68;y+=5.4)use("tree",178.2,y,T,{s:.8});
+for(let x=14;x<=144;x+=5.2)use(x%3<1.4?"palm":"tree",x,70.6,T,{s:.75});
+[[95,68.5],[60,67.8],[30,68]].forEach(([x,y])=>use("tree",x,y,T,{s:.6}));
+
+// ---------- labels ----------
+const LB=L.labels;
+function label(t,x,y,fs,cls="",rot=0){const e=mk("text",{x,y,class:"lbl "+cls,"font-size":fs,transform:rot?`rotate(${rot} ${x} ${y})`:""},LB);e.textContent=t;return e}
+label("Stage",19.5,31,2.2,"",-90);
+label("Gazebo",31,16.2,1.3);
+label("Way for Parking →",36,7.2,1.3);label("Way for Parking →",72,7.2,1.3);
+label("Food Area",84.5,42,1.6,"",90);
+label("Bride Room",113.4,14.5,1.2,"dk",90);label("Groom Room",113.4,47.5,1.2,"dk",90);
+label("Photo Zone",106,32.5,1.5);
+label("KITCHEN AREA",107.5,61.5,1.5);
+label("HALL A",130,17,3.2,"dk");label("HALL B",130,45,3.2,"dk");
+label("PARKING AREA",161.5,37,2.6,"dk");
+label("Washrooms",45,63.2,1.1,"dk");
+label("Capsule Toilets",78,66.7,1.2);
+label("DG",124,64,1.4);
+const sign=(t,x,y,rot)=>{const g=mk("g",{transform:`translate(${x},${y}) rotate(${rot||0})`},LB);mk("rect",{x:-3.4,y:-.9,width:6.8,height:1.8,rx:.25,fill:"#D7252B",stroke:"#fff","stroke-width":.15},g);const t2=mk("text",{x:0,y:.08,class:"lbl","font-size":1.05},g);t2.textContent=t};
+sign("GUEST ENTRY",17,52.6);sign("EXIT",8,26,-90);sign("EXIT",62,69.2);
+
+// ---------- layers ----------
+[["trees","Trees"],["furniture","Seating & tables"],["labels","Labels"]].forEach(([k,n])=>{
+ const lab=document.createElement("label");lab.innerHTML=`<input type="checkbox" id="chk-${k}" checked> ${n}`;$("#layers").appendChild(lab);
+ lab.querySelector("input").onchange=ev=>L[k].classList.toggle("hidden-layer",!ev.target.checked)});
+
+// ---------- legend + selection ----------
+const leg=$("#legend");
+EL.forEach(e=>{const li=document.createElement("li");li.tabIndex=0;li.dataset.id=e.id;
+ li.innerHTML=`<span><span class="dot" style="background:${CAT[e.cat].c}"></span>${e.n}</span><span>${e.w}×${e.d} m</span>`;
+ li.onclick=()=>select(e.id,true);li.onkeydown=k=>{if(k.key==="Enter")select(e.id,true)};leg.appendChild(li)});
+let selBox=null;
+function select(id,focus){
+ const e=byId[id];
+ selBox&&selBox.remove();selBox=mk("rect",{x:e.x-.6,y:e.y-.6,width:e.w+1.2,height:e.d+1.2,rx:.6,class:"selbox"},L.sel);
+ leg.querySelectorAll("li").forEach(li=>li.classList.toggle("on",li.dataset.id===id));
+ $("#sel").innerHTML=`<p class="eyebrow">Selected</p><h2>${e.n}</h2><span class="chip" style="background:${CAT[e.cat].c}">${CAT[e.cat].n}</span>
+  <dl><dt>Size</dt><dd>${e.w} × ${e.d} m</dd><dt>Area</dt><dd>${Math.round(e.w*e.d).toLocaleString("en-IN")} m²</dd>
+  <dt>Height (for 3D)</dt><dd>${e.h?e.h+" m":"ground level"}</dd>${e.cap?`<dt>Capacity</dt><dd>${e.cap}</dd>`:""}</dl><p class="note">${e.note}</p>`;
+ if(focus)zoomTo(e);
+}
+Object.entries(nodes).forEach(([id,g])=>{
+ g.addEventListener("click",()=>{if(!moved)select(id)});
+ g.addEventListener("keydown",k=>{if(k.key==="Enter"||k.key===" "){k.preventDefault();select(id)}});
+ g.addEventListener("pointermove",ev=>{const t=$("#tip"),r=$(".plan").getBoundingClientRect();t.hidden=false;t.textContent=byId[id].n;t.style.left=(ev.clientX-r.left)+"px";t.style.top=(ev.clientY-r.top)+"px"});
+ g.addEventListener("pointerleave",()=>$("#tip").hidden=true);
+});
+// put large invisible-hit areas (seating, food, parking) below the rest so small items stay clickable
+["parking","food","chairs","sofa"].forEach(id=>A.insertBefore(nodes[id],A.firstChild));
+
+// ---------- stats ----------
+const seats=10+5;
+$("#stats").innerHTML=[["≈ 470","seats facing the stage"],["14","dining tables"],["2","halls (350 each)"],[seats,"toilets (10 seats + 5 capsules)"],["1 : 80","toilets to guests"]]
+ .map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+
+// ---------- pan & zoom ----------
+const svg=$("#svg");const FULL={x:0,y:0,w:180,h:74};let vb={...FULL};
+const apply=()=>svg.setAttribute("viewBox",`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+function zoom(f,cx,cy){const nw=Math.min(FULL.w,Math.max(20,vb.w*f));const k=nw/vb.w;cx??=vb.x+vb.w/2;cy??=vb.y+vb.h/2;vb={x:cx-(cx-vb.x)*k,y:cy-(cy-vb.y)*k,w:nw,h:vb.h*k};clamp();apply()}
+function clamp(){vb.x=Math.max(-10,Math.min(FULL.w-vb.w+10,vb.x));vb.y=Math.max(-6,Math.min(FULL.h-vb.h+6,vb.y))}
+function zoomTo(e){const w=Math.min(FULL.w,Math.max(40,e.w*2.4,e.d*2.4*180/74));const h=w*74/180;vb={x:e.x+e.w/2-w/2,y:e.y+e.d/2-h/2,w,h};clamp();apply()}
+$("#zin").onclick=()=>zoom(.7);$("#zout").onclick=()=>zoom(1/.7);$("#zfit").onclick=()=>{vb={...FULL};apply()};
+const toSvg=(cx,cy)=>{const r=svg.getBoundingClientRect();return[vb.x+(cx-r.left)/r.width*vb.w,vb.y+(cy-r.top)/r.height*vb.h]};
+svg.addEventListener("wheel",ev=>{ev.preventDefault();const[x,y]=toSvg(ev.clientX,ev.clientY);zoom(ev.deltaY>0?1.12:1/1.12,x,y)},{passive:false});
+let drag=null,moved=false;const pts=new Map();
+svg.addEventListener("pointerdown",ev=>{pts.set(ev.pointerId,[ev.clientX,ev.clientY]);drag={x:ev.clientX,y:ev.clientY,vb:{...vb}};moved=false});
+svg.addEventListener("pointermove",ev=>{
+ if(!pts.has(ev.pointerId))return;const prev=pts.get(ev.pointerId);pts.set(ev.pointerId,[ev.clientX,ev.clientY]);
+ if(pts.size===2){const other=[...pts.entries()].find(([k])=>k!==ev.pointerId)[1];const cur=pts.get(ev.pointerId);
+  const d=Math.hypot(cur[0]-other[0],cur[1]-other[1]),d0=Math.hypot(prev[0]-other[0],prev[1]-other[1]);
+  if(d0>0&&d>0){const[x,y]=toSvg((cur[0]+other[0])/2,(cur[1]+other[1])/2);zoom(d0/d,x,y)}moved=true;return}
+ if(!drag)return;const r=svg.getBoundingClientRect();const dx=ev.clientX-drag.x,dy=ev.clientY-drag.y;
+ if(Math.abs(dx)+Math.abs(dy)>4){moved=true;svg.classList.add("dragging")}
+ if(moved){vb.x=drag.vb.x-dx/r.width*vb.w;vb.y=drag.vb.y-dy/r.height*vb.h;clamp();apply()}});
+const end=ev=>{pts.delete(ev.pointerId);if(pts.size===0){drag=null;svg.classList.remove("dragging");setTimeout(()=>moved=false,0)}};
+svg.addEventListener("pointerup",end);svg.addEventListener("pointercancel",end);svg.addEventListener("pointerleave",end);
+
+select("stage");
+</script>
+
+</body>
+</html>
